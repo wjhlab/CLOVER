@@ -8,6 +8,7 @@ In addition, this repository includes all revelant custom R scripts for clusteri
 All raw MCD files, fully annotated data frame ("global_data.rds"), and example CLOVER plots ("ClusterPlot") are available at 10.5281/zenodo.16907810. 
 "global_data.rds" contains a fully annotated data frame (data_full) that can be inputted into the R script "csvphenograph.R" or the R script "ClusterPlot.R".
 In the 'Config' folder, there is a metadata, area, and merge (annotation) file necessary to generate clusters and plots.
+In the 'Data' folder, there are .csv files for each sample containing spatial and antibody intensity data at a single-cell level.
 
 
 # R scripts
