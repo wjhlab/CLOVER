@@ -1,7 +1,7 @@
 //Wood Lab, developed by Jessie Kanacharoen
 //email any questions to skanach2@jh.edu
-//SS - 4/28; edited script to correct size from 1250x1250 to 1000x1000
-//JK - 5/20; add dialog box for manual ROI size input, stack in number order, fixed plotting error
+
+// The difference between the Annotated and Unannotated versions is that Annotated sorts the layers alphabetically, while Unannotated sorts the layers numerically.
 
 // Function to append a value to an array (used for tracking missing files)
 function appendToArray(arr, value) {
@@ -23,10 +23,10 @@ function annotateImage(overlayName) {
 }
 
 // Step 1: Choose input and output folders
-waitForUser("Select the H&E Source Folder");
-sourceDir1 = getDirectory("H&E Source Folder");
-waitForUser("Select the IMC Source Folder (ClusterPlot)");
-sourceDir2 = getDirectory("IMC Source Folder");
+waitForUser("Select the Reference Source Folder");
+sourceDir1 = getDirectory("Source Folder");
+waitForUser("Select the IMC Overlay Folder (ClusterPlot)");
+sourceDir2 = getDirectory("IMC Overlay Folder");
 waitForUser("Select the Output Folder");
 destinationDir = getDirectory("Output Folder");
 
@@ -39,7 +39,7 @@ roiWidth = Dialog.getNumber();
 roiHeight = Dialog.getNumber();
 
 
-// Step 2: Get list of TIFF files from Folder 1 (H&E images)
+// Step 2: Get list of TIFF files from Folder 1 (Source images)
 fileList = getFileList(sourceDir1);
 
 // Step 3: Prepare arrays to track errors
@@ -64,29 +64,30 @@ if (firstSubfolder == "") {
 
 print("Using first subfolder: " + firstSubfolder);
 
-// Step 5: Loop through all H&E images in Folder 1
+// Step 5: Loop through all Source images in Folder 1
 setBatchMode(true); // can change this to false if you want to see the process live
 for (i = 0; i < fileList.length; i++) {
-    heFile = fileList[i];
+    SourceFile = fileList[i];
 
     // Skip non-tiff files
-    if (!(endsWith(heFile, ".tif") || endsWith(heFile, ".tiff")))
+    if (!(endsWith(SourceFile, ".tif") || endsWith(SourceFile, ".tiff")))
         continue;
 
-    baseName = substring(heFile, 0, indexOf(heFile, ".tif")); // Extract base name without extension
-    hePath = sourceDir1 + heFile;
+    baseName = substring(SourceFile, 0, indexOf(SourceFile, ".tiff")); // Extract base name without extension
+    SourcePath = sourceDir1 + SourceFile;
 
-    // Step 6: Open the H&E image (e.g., 01_C1.tiff)
-    open(hePath);
-    rename("HE");
+    // Step 6: Open the Source image (e.g., 01_C1.tiff)
+    open(SourcePath);
+    rename("Source");
 
-    // Step 7: Get the corresponding subfolder for the current H&E image
-    imcFolder = sourceDir2 + baseName + "/";
-    if (!File.exists(imcFolder)) {
-        missingSubfolders = appendToArray(missingSubfolders, baseName);
-        close(); // Close HE image if subfolder doesn't exist
-        continue;
-    }
+	// Step 7: Get the corresponding subfolder for the current Source image
+	imcFolder = sourceDir2 + baseName + "/";
+	if (!File.exists(imcFolder)) {
+	    missingSubfolders = appendToArray(missingSubfolders, baseName);
+	    close(); // Close Source image if subfolder doesn't exist
+	    continue;
+	}
+
 
 	// Step 8: Get all marker TIFFs from the subfolder and clean their names
 	fileArray = getFileList(imcFolder);
@@ -130,7 +131,8 @@ for (i = 0; i < fileList.length; i++) {
 	
 	cleanNames = nameMap;  // Now cleanNames holds the base names sorted numerically
 
-    // Step 9: Open all marker images for this H&E
+
+    // Step 9: Open all marker images for this Source
     for (j = 0; j < cleanNames.length; j++) {
         markerPath = imcFolder + cleanNames[j] + ".tiff";  // Assume .tiff extension
         if (!File.exists(markerPath)) {
@@ -138,12 +140,13 @@ for (i = 0; i < fileList.length; i++) {
         }
         open(markerPath);
     }
+    
 	    // Step 9.1: Check that all opened images are matching USER INPUT; if not, skip this sample
-    selectWindow("HE");
+    selectWindow("Source");
     width = getWidth();
     height = getHeight();
     if (width != roiWidth || height != roiHeight) {
-        print("Size mismatch in HE image: " + baseName);
+        print("Size mismatch in Source image: " + baseName);
         missingSamples = appendToArray(missingSamples, baseName);
         run("Close All");
         continue;
@@ -159,7 +162,7 @@ for (i = 0; i < fileList.length; i++) {
             selectWindow(markerWindow);
             w = getWidth();
             h = getHeight();
-            if (w != 1000 || h != 1000) {
+            if (w !=  roiWidth|| h != roiHeight) {
                 print("Size mismatch in marker image: " + cleanNames[j] + " of sample " + baseName);
                 sizeMismatch = true;
                 break;
@@ -173,31 +176,31 @@ for (i = 0; i < fileList.length; i++) {
         continue;
     }
 
-	// Step 10: Duplicate the H&E image n+1 times (where n is the number of markers)
-	dupHE = newArray("HE");
+	// Step 10: Duplicate the source image n+1 times (where n is the number of markers)
+	dupSource = newArray("Source");
 	for (j = 0; j <= cleanNames.length; j++) { 
-	    selectWindow("HE");
-	    run("Duplicate...", "title=HE-" + (j+1));
-	    dupHE = appendToArray(dupHE, "HE-" + (j+1));
+	    selectWindow("Source");
+	    run("Duplicate...", "title=Source-" + (j+1));
+	    dupSource = appendToArray(dupSource, "Source-" + (j+1));
 	}
 
 
-	// Step 14: Delete the original H&E image
-		selectWindow("HE");
+	// Step 14: Delete the original Source image
+		selectWindow("Source");
 		close();
 
 	
-// Step 15: Create 2‑channel composites (marker + H&E)
+// Step 15: Create 2‑channel composites (marker + Source)
 for (j = 0; j < cleanNames.length; j++) {
     // Build the window titles
 
     markerWin = cleanNames[j] + ".tiff";   // e.g. "5-1"
-    heWin     = dupHE[j+1];             // matching H&E slice
+    SourceWin     = dupSource[j+1];             // matching Source slice
 
-    // Always put marker in channel 1 and H&E in channel 2
+    // Always put marker in channel 1 and Source in channel 2
     mergeArgs = 
         "c1=[" + markerWin + "]" +
-        " c7=[" + heWin     + "]" +
+        " c7=[" + SourceWin     + "]" +
         " create";
 
     run("Merge Channels...", mergeArgs);
@@ -207,7 +210,7 @@ for (j = 0; j < cleanNames.length; j++) {
 
 
     // Step 16: Convert all images to RGB before stacking
-    //selectWindow("H&E Only");
+    //selectWindow("Source Only");
     //run("RGB Color");
     //selectWindow("ALL");
     //run("RGB Color");
@@ -237,7 +240,7 @@ for (j = 0; j < imageList.length; j++) {
     Stack.setSlice(j+2);  // 1-based index in ImageJ stacks
     overlayName = imageList[j];
     
-    // Concatenate the original H&E file name and the overlay name
+    // Concatenate the original Source file name and the overlay name
     annotationText = baseName + " " + overlayName;
     
     // Define the shadow offset and color
@@ -280,7 +283,7 @@ function joinArray(arr) {
 }
 
 if (missingSamples.length > 0) {
-    print("Size mismatch between H&E and IMC ROI: " + joinArray(missingSamples));
+    print("Size mismatch between Source and IMC ROI: " + joinArray(missingSamples));
 }
 if (missingSubfolders.length > 0) {
     print("Missing overlay subfolders: " + joinArray(missingSubfolders));
