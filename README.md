@@ -15,5 +15,5 @@ The R script "csvphenograph.R" contains custom code to cluster out a dataset, vi
 The R script "CLOVERPlot.R" generates the minimal dataframe required to generate annotated or unannotated spatial cluster dot plots to be used further downstream as CLOVER plots.
 
 # IJM scripts
-The IJM scripts "CLOVERLayer_AnnotatedClusters.ijm" and "CLOVERLayer_AnnotatedClusters.ijm" contains custom code to overlay cluster plots on source images, generated CLOVER plots. 
+The IJM scripts "CLOVERLayer_AnnotatedClusters.ijm" and "CLOVERLayer_AnnotatedClusters.ijm" contains custom code to overlay cluster plots on source images, generating CLOVER plots. 
 "CLOVERLayer_AnnotatedClusters.ijm" is better adapted for use with annotated cluster plots, while "CLOVERLayer_AnnotatedClusters.ijm" is better adapted for use with unannotated cluster plots.
